@@ -10,11 +10,12 @@ class TestCrypto(unittest.TestCase):
         pass_ver = sha256.password_verification("abc", sha256.password_hash("abc",rd.generate_salt()))
         self.assertEqual(pass_ver, True)
 
-    # verifies that hash and verification are matching each other for MD5
-    def test_2(self):
-        md5 = c.MD5_hasher()
-        md5_hash = md5.password_verification("abc", md5.password_hash("abc"))
-        self.assertEqual(md5_hash, True)
-        
+    def test_rejects_wrong_password(self):
+        generator = c.Random_generator()
+        hasher = getattr(c, c.PASSWORD_HASHER)()
+        password_hash = hasher.password_hash("abc", generator.generate_salt())
+        self.assertFalse(hasher.password_verification("wrong", password_hash))
+
+
 if __name__ == '__main__':    
     unittest.main()
