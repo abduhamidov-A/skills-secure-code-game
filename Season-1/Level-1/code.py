@@ -1,33 +1,36 @@
-'''
-Welcome to Secure Code Game Season-1/Level-1!
-
-Follow the instructions below to get started:
-
-1. tests.py is passing but code.py is vulnerable
-2. Review the code. Can you spot the bug?
-3. Fix the code but ensure that tests.py passes
-4. Run hack.py and if passing then CONGRATS!
-5. If stuck then read the hint
-6. Compare your solution with solution.py
-'''
-
 from collections import namedtuple
+from decimal import Decimal, InvalidOperation
 
 Order = namedtuple('Order', 'id, items')
 Item = namedtuple('Item', 'type, description, amount, quantity')
 
+MAX_AMOUNT = Decimal('100000')
+MAX_QUANTITY = 100
+MAX_TOTAL = Decimal('1000000')
+
+
 def validorder(order: Order):
-    net = 0
-
+    payments = Decimal(0)
+    expenses = Decimal(0)
     for item in order.items:
-        if item.type == 'payment':
-            net += item.amount
-        elif item.type == 'product':
-            net -= item.amount * item.quantity
-        else:
+        if item.type not in ('payment', 'product'):
             return "Invalid item type: %s" % item.type
+        try:
+            amount = Decimal(str(item.amount))
+        except InvalidOperation:
+            return "Invalid item amount"
+        if item.type == 'payment':
+            if amount.is_finite() and abs(amount) <= MAX_AMOUNT:
+                payments += amount
+        else:
+            if not amount.is_finite() or not 0 < amount <= MAX_AMOUNT:
+                return "Invalid item amount"
+            if type(item.quantity) is not int or not 0 < item.quantity <= MAX_QUANTITY:
+                return "Invalid item quantity"
+            expenses += amount * item.quantity
 
-    if net != 0:
-        return "Order ID: %s - Payment imbalance: $%0.2f" % (order.id, net)
-    else:
-        return "Order ID: %s - Full payment received!" % order.id
+    if abs(payments) > MAX_TOTAL or expenses > MAX_TOTAL:
+        return "Total amount payable for an order exceeded"
+    if payments != expenses:
+        return "Order ID: %s - Payment imbalance: $%0.2f" % (order.id, payments - expenses)
+    return "Order ID: %s - Full payment received!" % order.id
